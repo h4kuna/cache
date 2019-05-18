@@ -36,14 +36,14 @@ class Cache
 	/** @internal */
 	public const NAMESPACE_SEPARATOR = "\x00";
 
-	/** @var IStorage */
+	/** @var ISimpleStorage */
 	private $storage;
 
 	/** @var string */
 	private $namespace;
 
 
-	public function __construct(IStorage $storage, string $namespace = null)
+	public function __construct(ISimpleStorage $storage, string $namespace = null)
 	{
 		$this->storage = $storage;
 		$this->namespace = $namespace . self::NAMESPACE_SEPARATOR;
@@ -53,7 +53,7 @@ class Cache
 	/**
 	 * Returns cache storage.
 	 */
-	final public function getStorage(): IStorage
+	final public function getStorage(): ISimpleStorage
 	{
 		return $this->storage;
 	}
@@ -162,7 +162,7 @@ class Cache
 	{
 		$key = $this->generateKey($key);
 
-		if ($data instanceof \Closure) {
+		if ($data instanceof \Closure && $this->storage instanceof IStorage) {
 			$this->storage->lock($key);
 			try {
 				$data = $data(...[&$dependencies]);
@@ -178,6 +178,8 @@ class Cache
 			$dependencies = $this->completeDependencies($dependencies);
 			if (isset($dependencies[self::EXPIRATION]) && $dependencies[self::EXPIRATION] <= 0) {
 				$this->storage->remove($key);
+			} elseif (is_callable($data) && $this->storage instanceof ISelfLock) {
+				$data = $this->storage->entry($key, $data, $dependencies);
 			} else {
 				$this->storage->write($key, $data, $dependencies);
 			}

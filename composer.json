@@ -1,0 +1,8 @@
+{
+    "name": "h4kuna/caching",
+    "require": {
+        "php": ">=7.1",
+        "nette/caching": "^3.0",
+        "tracy/tracy": "^2.6"
+    }
+}
